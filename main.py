@@ -18,7 +18,7 @@ data_file_schedule = 10
 data_file_index = 0
 
 # The first url to process
-start_url = 'http://mit.edu'
+start_url = 'http://www.mit.edu'
 
 # Urls will be judged based on whether they contain this string
 score_string = 'mit.edu'
