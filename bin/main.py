@@ -3,12 +3,19 @@
 # +---------+
 
 import sys
+import lxml
 from lxml import html
+from lxml import etree
 import requests
 
 # +-----------+
 # | Variables |
 # +-----------+
+
+# Data file base path and schedule
+data_file_path = 'data.csv'
+data_file_schedule = 10
+data_file_index = 0
 
 # The first url to process
 start_url = 'http://mit.edu'
@@ -25,11 +32,27 @@ page_count = 0
 # A list to keep track of all the pages that have been processed
 processed_pages = []
 
+# Variables to keep track of how many times certain errors have occured
+error_already_processed = 0
+error_timeout = 0
+error_connection_error = 0
+error_too_many_redirects = 0
+error_tree_parse = 0
+error_missing_http = 0
+error_invalid_file = 0
+error_keyboard_interrupt = 0
+
 # +--------+
 # | main() |
 # +--------+
 
 def main():
+	# Clear and then write a header to the data file
+	data_file = open(data_file_path, 'w')
+	data_file.truncate()
+	data_file.write('Index, Average Score\n')		
+	data_file.close()
+
 	# Start off the program by processing the starting url
 	processPage(start_url)
 	return
@@ -40,59 +63,91 @@ def main():
 
 def processPage(url):
 	# Globals
+	global lxml
+
 	global processed_pages
 	global page_count
 	global score_string
 	global scores
+
+	global data_file_path
+	global data_file_schedule
+	global data_file_index
+
+	global error_already_processed
+	global error_timeout
+	global error_connection_error
+	global error_too_many_redirects
+	global error_tree_parse
+	global error_missing_http
+	global error_invalid_file
+	global error_keyboard_interrupt
 	
+	# Print a header for the new page
+	print '--------------------------------------------------------------'
+
 	try:
+		# Check if url starts with the http
+		if url[0:7] != 'http://':
+			error_missing_http += 1
+			print error_missing_http, '| Missing http, url: ', url
+			return
+
 		# Check if the url is only a link to part of the same page
-		if url[0] == '#':
-			return
+		#if url[0] == '#':
+		#	return
+
 		# Check if the url starts with /
-		if url[0] == '/':
-			return
+		#if url[0] == '/':
+		#	return
 	
-		# Chech if the url is only a mailto: link
-		if 'mailto' == url[0:6]:
-			return
+		# Check if the url is only a mailto: link
+		#if 'mailto' == url[0:6]:
+		#	return
 		
 		# Check if the url has already been processed
 		if url in processed_pages:
+			error_already_processed += 1
+			print error_already_processed, '| Already processed url: ', url
 			return
 		
-		# Check if the url represents a .pdf file
-		if 'pdf' == url[-3:]:
+		# Check if the url represents a invalid file
+		file_type = url[-4:]
+		if '.pdf' == file_type or '.jpg' == file_type or 'jpeg' == file_type or '.png' == file_type:
+			error_invalid_file += 1
+			print error_invalid_file, '| Invalid file type: ', file_type, ' in url: ', url
 			return
 		
-		# Print a header for the new page
-		print '--------------------------------------------------------------'
-	
 		# Increment page count and store the url in a list of processed urls to avoid it being processed again
 		page_count += 1
 		processed_pages.append(url)
 
 		# Issue a GET request
 		try:
-			page = requests.get(url, allow_redirects=True, timeout=1)
+			page = requests.get(url, allow_redirects=True, timeout=2)
 		except requests.exceptions.ConnectionError:
-			print 'Connection error'
+			error_connection_error += 1
+			print error_connection_error, '| Connection error, url: ', url
 			return
 		except requests.exceptions.TooManyRedirects:
-			print 'Too many redirects'
+			error_too_many_redirects += 1
+			print error_too_many_redirects, '| Too many redirects, url: ', url
 			return
 		except requests.exceptions.Timeout:
-			print 'Request timed out'
+			error_timeout += 1
+			print error_timeout, '| Request timed out, url: ', url
 			return
 		except KeyboardInterrupt:
-			print 'KeyboardInterrupt'
+			error_keyboard_interrupt += 1
+			print error_keyboard_interrupt, '| KeyboardInterrupt'
 			exit()
 
 		# Use lxml to get a tree representation of the page binary
 		try:
-			tree = html.fromstring(page.content)
-		except lxml.etree.ParserError:
-			print 'Could not parse'
+			tree = lxml.html.fromstring(page.content)
+		except lxml.html.etree.ParserError:
+			error_tree_parse += 1
+			print error_tree_parse, '| Could not parse tree, url: ', url
 			return
 
 		# Parse out all hrefs from <a> tags
@@ -135,6 +190,20 @@ def processPage(url):
 			
 			# Print average score
 			print "Average score: ", int(score_average), '%'
+
+			# Increment the data file index
+			data_file_index += 1
+
+			# Check if its time to write to data file
+			if data_file_index % data_file_schedule == 0:
+				# Alert user
+				print 'Writing to data file, index: ', data_file_index
+
+				# Open data file
+				data_file = open(data_file_path, 'a')
+				data_file.write(str(data_file_index) + ',' + str(score_average))  
+				data_file.write('\n')
+				data_file.close()			
 
 			# Repeat process for all good urls on page
 			for url in good_urls:
