@@ -147,11 +147,8 @@ def processPage(url):
 			tree = lxml.html.fromstring(page.content)
 		except lxml.html.etree.ParserError:
 			error_tree_parse += 1
-			print error_tree_parse, '| Could not parse tree (HTML Error, url: ', url
+			print error_tree_parse, '| Could not parse tree, url: ', url
 			return
-		except lxml.etree.XMLSyntaxError:
-			error_tree_parse += 1
-			print error_tree_parse, '| Could not parse tree (XML Error), url: ', url
 
 		# Parse out all hrefs from <a> tags
 		urls = tree.xpath('//a/@href')

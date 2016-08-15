@@ -6,6 +6,10 @@ __pycache__/
 # Mac
 .DS_Store
 
+# Data files
+data.csv
+nohup.out
+
 # C extensions
 *.so
 
