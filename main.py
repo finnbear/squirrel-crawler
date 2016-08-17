@@ -23,8 +23,9 @@ start_url = 'http://www.mit.edu'
 # Urls will be judged based on whether they contain this string
 score_string = 'mit.edu'
 
-# A variable to track all the scores
-scores = []
+# Variables to track all data metrics
+page_scores = []
+page_lengths = []
 
 # A variable to track how many pages have been processed
 page_count = 0
@@ -50,7 +51,7 @@ def main():
 	# Clear and then write a header to the data file
 	data_file = open(data_file_path, 'w')
 	data_file.truncate()
-	data_file.write('Index, Average Score\n')		
+	data_file.write('Index, Error Count, Average Score, Average Length\n')
 	data_file.close()
 
 	# Start off the program by processing the starting url
@@ -68,7 +69,8 @@ def processPage(url):
 	global processed_pages
 	global page_count
 	global score_string
-	global scores
+	global page_scores
+	global page_lengths
 
 	global data_file_path
 	global data_file_schedule
@@ -82,7 +84,7 @@ def processPage(url):
 	global error_missing_http
 	global error_invalid_file
 	global error_keyboard_interrupt
-	
+
 	# Print a header for the new page
 	print '--------------------------------------------------------------'
 
@@ -123,6 +125,7 @@ def processPage(url):
 		processed_pages.append(url)
 
 		# Issue a GET request
+		page = []
 		try:
 			page = requests.get(url, allow_redirects=True, timeout=2)
 		except requests.exceptions.ConnectionError:
@@ -143,6 +146,7 @@ def processPage(url):
 			exit()
 
 		# Use lxml to get a tree representation of the page binary
+		tree = []
 		try:
 			tree = lxml.html.fromstring(page.content)
 		except lxml.html.etree.ParserError:
@@ -152,10 +156,11 @@ def processPage(url):
 		except lxml.etree.XMLSyntaxError:
 			error_tree_parse += 1
 			print error_tree_parse, '| Could not parse tree (XML Error), url: ', url
+			return
 
 		# Parse out all hrefs from <a> tags
 		urls = tree.xpath('//a/@href')
-	
+
 		# Initialize variables for logging urls
 		num_urls = len(urls)
 
@@ -186,13 +191,30 @@ def processPage(url):
 			print 'Percent good urls:', int(percent_good_urls), '%'
 
 			# Add score to list of scores
-			scores.append(percent_good_urls)
+			page_scores.append(percent_good_urls)
 
-			# Compute average of scores sofar
-			score_average = sum(scores) / float(len(scores))
-			
+			# Get length of page
+			page_length = len(page.content)
+
+			# Print length of page
+			print 'Page Length: ', page_length
+
+			# Add page length to list of page lengths
+			page_lengths.append(page_length)
+
+			# Compute average of metrics sofar
+			score_average = average(page_scores)
+			length_average = average(page_lengths)
+
 			# Print average score
 			print "Average score: ", int(score_average), '%'
+			print "Average length: ", int(length_average)
+
+			#Compute error count
+			error_count = sum([error_already_processed, error_timeout, error_connection_error, error_too_many_redirects, error_tree_parse, error_missing_http, error_invalid_file, error_keyboard_interrupt])
+
+			# Print error count
+			print "Error Count: ", error_count
 
 			# Increment the data file index
 			data_file_index += 1
@@ -204,9 +226,9 @@ def processPage(url):
 
 				# Open data file
 				data_file = open(data_file_path, 'a')
-				data_file.write(str(data_file_index) + ',' + str(score_average))  
+				data_file.write(str(data_file_index) + ',' + str(score_average) + ',' + str(length_average) + ',' + str(error_count))
 				data_file.write('\n')
-				data_file.close()			
+				data_file.close()
 
 			# Repeat process for all good urls on page
 			for url in good_urls:
@@ -219,12 +241,14 @@ def processPage(url):
 		err = sys.exc_info()[0]
 
 		# Print error
-		print 'Error: ', err		
+		print 'Error: ', err
 
 		# Exit if prompted
 		if str(err) == "<type 'exceptions.KeyboardInterrupt'>" or str(err) == "<type 'exceptions.SystemExit'>":
-			exit() 
+			exit()
 		return
+def average(list):
+	return sum(list) / float(len(list))
 
 # +---------+
 # | Program |
