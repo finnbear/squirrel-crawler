@@ -1,0 +1,65 @@
+# Local Imports
+import output
+
+# Url errors
+url_image_error = 0
+def urlImageError():
+	global url_image_error
+	url_image_error += 1
+	output.console_warning("URL is image (" + str(url_image_error) + ").")
+
+url_pdf_error = 0
+def urlPdfError():
+	global url_pdf_error
+	url_pdf_error += 1
+	output.console_warning("URL is pdf (" + str(url_pdf_error) + ").")
+
+url_mailto_error = 0
+def urlMailtoError():
+	global url_mailto_error
+	url_mailto_error += 1
+	output.console_warning("URL is mailto (" + str(url_mailto_error) + ").")
+
+url_relative_error = 0
+def urlRelativeError():
+	global url_relative_error
+	url_relative_error += 1
+	output.console_error("URL is relative (" + str(url_relative_error) + ").")
+
+url_protocol_error = 0
+def urlProtocolError():
+	global url_protocol_error
+	url_protocol_error += 1
+	output.console_error("URL is of unknown protocol (" + str(url_protocol_error) + ").")
+
+# Request errors
+request_timeout_error = 0
+def requestTimeoutError():
+	global request_timeout_error
+	request_timeout_error += 1
+	output.console_error("Request timeout (" + str(request_timeout_error) + ").")
+
+request_connection_error = 0
+def requestConnectionError():
+	global request_connection_error
+	request_connection_error += 1
+	output.console_warning("Request connection error (" + str(request_connection_error) + ").")
+
+request_redirects_error = 0
+def requestRedirectsError():
+	global request_redirects_error
+	request_redirects_error += 1
+	output.console_warning("Request redirected (" + str(request_redirects_error) + ").")
+
+# Tree errors
+tree_parse_error = 0
+def treeParseError():
+	global tree_parse_error
+	tree_parse_error += 1
+	output.console_warning("Tree parse error (" + str(tree_parse_error) + ").")
+
+tree_syntax_error = 0
+def treeSyntaxError():
+	global tree_syntax_error
+	tree_syntax_error += 1
+	output.console_warning("Tree syntax error (" + str(tree_syntax_error) + ").")

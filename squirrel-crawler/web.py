@@ -1,0 +1,77 @@
+# Package Imports
+import lxml
+from lxml import html
+from lxml import etree
+import requests
+
+# Local Imports
+import config
+import output
+import error
+
+# Constants
+
+def fix(url, host):
+	if ("." in url) and protocols(url, ["/"]):
+		return host + url
+	else:
+		return url 
+
+def validate(url):
+	if extensions(url, [".png", ".jpeg", ".jpg", ".gif", ".bmp"]):
+		error.urlImageError()
+		return False
+	elif extensions(url, [".pdf"]):
+		error.urlPdfError()
+		return False
+	elif protocols(url, ["/", "#"]):
+		error.urlRelativeError()
+		return False
+	elif protocols(url, ["mailto:"]):
+		error.urlMailtoError()
+		return False
+	elif protocols(url, ["http://", "https://"]):
+		return True
+	else:
+		error.urlProtocolError()
+		return False
+
+def extensions(url, extensions):
+	for extension in extensions:
+		if url[-len(extension):] == extension:
+			return True
+	return False
+
+def protocols(url, protocols):
+	for protocol in protocols:
+		if url[0:len(protocol)] == protocol:
+			return True
+	return False
+
+def get(url):
+	try:
+		return requests.get(url, allow_redirects=True, timeout=config.request_timeout)
+	except requests.exceptions.ConnectionError:
+		error.requestConnectionError()
+		return False
+	except requests.exceptions.TooManyRedirects:
+		error.requestRedirectsError()
+		return False
+	except requests.exceptions.Timeout:
+		error.requestTimeoutError()
+		return False
+
+def tree(page):
+	try:
+		return lxml.html.fromstring(page.content)
+	except lxml.html.etree.ParserError:
+		error.treeParseError()
+		return False
+	except lxml.etree.XMLSyntaxError:
+		error.treeSyntaxError()
+		return False
+
+def urls(tree):
+	return tree.xpath('//a/@href')
+
+

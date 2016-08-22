@@ -1,0 +1,7 @@
+# Constants
+outputing_threads = 1
+validating_threads = 5
+processing_threads = 20
+request_timeout = 2 # Seconds to wait before request timeout
+output_interval = 5 # Seconds to wait between each output
+datafile_path = "data.csv" # Path to output file
