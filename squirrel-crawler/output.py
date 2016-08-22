@@ -2,13 +2,16 @@
 import config
 
 def console_log(text):
-	print("Log     | " + text)
+	if config.output_log:
+		print("Log     | " + text)
 
 def console_warning(text):
-	print("Warning | " + text)
+	if config.output_warning:
+		print("Warning | " + text)
 
 def console_error(text):
-	print("Error   | " + text)
+	if config.output_error:
+		print("Error   | " + text)
 
 def datafile_init(fields):
 	line = ""
